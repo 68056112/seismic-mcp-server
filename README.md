@@ -1,19 +1,19 @@
 # Seismic MCP Server (Streamable HTTP + Docker)
 
-MCP server for earthquake data (USGS, TMD) and parametric insurance analytics.
-Built to `spec.md`, but uses the **Streamable HTTP** transport (default) and runs in a Docker container.
-Stdio mode still works.
+MCP server สำหรับข้อมูลแผ่นดินไหว (USGS และกรมอุตุนิยมวิทยา หรือ TMD) และการวิเคราะห์ประกันภัยแบบ parametric
+พัฒนาตาม `spec.md` แต่ใช้ transport แบบ **Streamable HTTP** เป็นค่าเริ่มต้น และรันใน Docker container ได้
+ยังใช้โหมด stdio ได้เหมือนเดิม
 
-## Files
+## ไฟล์ในโปรเจกต์
 
-| File | Purpose |
+| ไฟล์ | หน้าที่ |
 |---|---|
-| `seismic_core.py` | API clients, `EarthquakeEvent` normalization, analytics logic, tool schemas |
-| `seismic_mcp_server.py` | MCP wiring (`initialize`, `tools/list`, `tools/call`), plus the HTTP and stdio transports |
-| `Dockerfile`, `docker-compose.yml` | Container build and run |
-| `test_client.py` | End-to-end test with the official MCP Python client |
+| `seismic_core.py` | เรียก API, แปลงข้อมูลเป็น `EarthquakeEvent`, ตรรกะ analytics และ schema ของ tools |
+| `seismic_mcp_server.py` | เชื่อมกับ MCP (`initialize`, `tools/list`, `tools/call`) และ transport แบบ HTTP และ stdio |
+| `Dockerfile`, `docker-compose.yml` | build และรัน container |
+| `test_client.py` | ทดสอบแบบ end-to-end ด้วย MCP Python client อย่างเป็นทางการ |
 
-## Running with Docker
+## รันด้วย Docker
 
 ```bash
 docker compose up -d --build
@@ -22,20 +22,20 @@ docker compose up -d --build
 - MCP endpoint: `http://localhost:8000/mcp`
 - Health check: `http://localhost:8000/health`
 
-Without compose:
+ถ้าไม่ใช้ compose:
 
 ```bash
 docker build -t seismic-mcp-server:0.1.0 .
 docker run -d -p 8000:8000 --name seismic-mcp seismic-mcp-server:0.1.0
 ```
 
-Test:
+ทดสอบ:
 
 ```bash
 pip install mcp==2.3.0 && python test_client.py http://localhost:8000/mcp
 ```
 
-Or with curl:
+หรือทดสอบด้วย curl:
 
 ```bash
 curl -s http://localhost:8000/mcp \
@@ -43,14 +43,14 @@ curl -s http://localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-## Connecting a client
+## เชื่อมต่อกับ client
 
 **Claude Code**
 ```bash
 claude mcp add --transport http seismic-mcp http://localhost:8000/mcp
 ```
 
-**Claude Desktop** (HTTP, through the `mcp-remote` bridge)
+**Claude Desktop** (HTTP ผ่านตัวเชื่อม `mcp-remote`)
 ```jsonc
 {
   "mcpServers": {
@@ -59,7 +59,7 @@ claude mcp add --transport http seismic-mcp http://localhost:8000/mcp
 }
 ```
 
-**Claude Desktop** (stdio inside Docker)
+**Claude Desktop** (stdio ภายใน Docker)
 ```jsonc
 {
   "mcpServers": {
@@ -71,41 +71,41 @@ claude mcp add --transport http seismic-mcp http://localhost:8000/mcp
 }
 ```
 
-**MCP Inspector**: `npx @modelcontextprotocol/inspector`, then choose transport "Streamable HTTP" and URL `http://localhost:8000/mcp`
+**MCP Inspector**: รัน `npx @modelcontextprotocol/inspector` แล้วเลือก transport เป็น "Streamable HTTP" และใส่ URL `http://localhost:8000/mcp`
 
-## Configuration (environment variables)
+## การตั้งค่า (environment variables)
 
-| Variable | Default | Description |
+| ตัวแปร | ค่าเริ่มต้น | คำอธิบาย |
 |---|---|---|
-| `MCP_TRANSPORT` | `streamable-http` | `streamable-http` or `stdio` |
+| `MCP_TRANSPORT` | `streamable-http` | `streamable-http` หรือ `stdio` |
 | `MCP_HOST` / `MCP_PORT` / `MCP_PATH` | `0.0.0.0` / `8000` / `/mcp` | |
-| `MCP_STATELESS` | `true` | Stateless mode: no `Mcp-Session-Id` is kept, so the container can restart or scale freely |
-| `MCP_JSON_RESPONSE` | `true` | `true` returns `application/json`; `false` returns an SSE stream |
-| `MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS` | (empty) | Comma-separated lists; enable DNS-rebinding protection |
-| `SEISMIC_TZ` | `Asia/Bangkok` | Time zone used to resolve "today" for TMD tools |
-| `SEISMIC_HTTP_TIMEOUT` | `60` | Timeout (seconds) for external APIs |
-| `SEISMIC_TMD_CACHE_TTL` | `120` | Seconds to cache the TMD response |
-| `LOG_LEVEL` | `info` | Logs go to stderr |
+| `MCP_STATELESS` | `true` | โหมด stateless ไม่เก็บ `Mcp-Session-Id` จึง restart หรือ scale container ได้อิสระ |
+| `MCP_JSON_RESPONSE` | `true` | `true` ตอบเป็น `application/json` ส่วน `false` ตอบเป็น SSE stream |
+| `MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS` | (ว่าง) | รายการคั่นด้วย comma ถ้ากำหนดจะเปิดการป้องกัน DNS rebinding |
+| `SEISMIC_TZ` | `Asia/Bangkok` | timezone ที่ใช้คำนวณ "วันนี้" ของ tools TMD |
+| `SEISMIC_HTTP_TIMEOUT` | `60` | timeout (วินาที) ในการเรียก API ภายนอก |
+| `SEISMIC_TMD_CACHE_TTL` | `120` | จำนวนวินาทีที่ cache ผลจาก TMD |
+| `LOG_LEVEL` | `info` | log จะออกที่ stderr |
 
 ## Tools
 
-| Tool | Summary |
+| Tool | คำอธิบาย |
 |---|---|
-| `usgs_search_earthquakes` | Search USGS FDSN events (time range, magnitude, radius). Radius search needs `latitude`, `longitude` and `maxradiuskm` together |
-| `tmd_get_daily_earthquakes` | TMD events for one day (`date`; defaults to today in Thai time) |
-| `tmd_get_recent_earthquakes` | TMD events for the last N days (1–7), de-duplicated, newest first |
-| `match_events_to_assets` | Match events to assets by haversine distance and minimum magnitude |
-| `compute_parametric_payout` | Compute payouts from a distance-band payout curve (default 50 km → 50%, 100 km → 25%, 200 km → 10%) |
+| `usgs_search_earthquakes` | ค้นหาเหตุการณ์จาก USGS FDSN (ช่วงเวลา, ขนาด, รัศมี) ถ้าค้นตามรัศมีต้องใส่ `latitude`, `longitude` และ `maxradiuskm` ครบทั้งสามค่า |
+| `tmd_get_daily_earthquakes` | เหตุการณ์จาก TMD ของวันที่กำหนด (`date`; ถ้าไม่ใส่จะใช้วันนี้ตามเวลาไทย) |
+| `tmd_get_recent_earthquakes` | เหตุการณ์จาก TMD ย้อนหลัง N วัน (1–7) ตัดรายการซ้ำและเรียงจากใหม่ไปเก่า |
+| `match_events_to_assets` | จับคู่เหตุการณ์กับทรัพย์สินที่เอาประกันตามระยะทาง (haversine) และขนาดขั้นต่ำ |
+| `compute_parametric_payout` | คำนวณการจ่ายสินไหมตาม payout curve แบ่งตามระยะทาง (ค่าเริ่มต้น 50 km → 50%, 100 km → 25%, 200 km → 10%) |
 
-Errors use JSON-RPC: `-32602` for invalid arguments or an unknown tool, `-32001` when an external API fails, and `-32002` when an external response cannot be parsed.
+error ใช้รูปแบบ JSON-RPC: `-32602` เมื่อ argument ไม่ถูกต้องหรือไม่มี tool นั้น, `-32001` เมื่อ API ภายนอกล้มเหลว และ `-32002` เมื่ออ่านผลจาก API ภายนอกไม่ได้
 
-## Where the implementation differs from the spec (based on testing the live API on 2026-11-05)
+## จุดที่ต่างจาก spec (จากการทดสอบ API จริงเมื่อ 2026-11-05)
 
-1. **The live TMD API has a different format from the spec.** The event list is under `DailyEarthquakes` (not `DailySeismicEvent`), with fields `DateTimeUTC`, `DateTimeThai`, `Depth`, `OriginThai`, and numbers as strings. There is no `EventID`. The server handles both formats:
-   - `id` = `TMD-` + `EventID` if present; otherwise `TMD-` + a hash of (time, lat, lon, magnitude), which is stable across calls.
-   - `time` = `DateTime`, or `DateTimeUTC` converted to ISO8601 `Z`.
-   - `place` = `Location`, or `OriginThai`.
-2. **The TMD API ignores the `Date` parameter.** It always returns events from the start of the year (~1,300+ records). The server still sends `Date` as the spec requires, then filters by Thai local date (`DateTimeThai`) itself. `tmd_get_recent_earthquakes` makes one request instead of N (same result, much faster), and the response is cached for 120 seconds.
-3. **`initialize` capabilities** use the standard MCP form (`{"tools": {"listChanged": false}}`) generated by the SDK, rather than `tools.list/call = true` from the spec, because standard MCP clients expect this form.
-4. Results are returned as both `structuredContent` (JSON object) and `content[0].text` (the same JSON as a string), so every client can read them.
-5. `payout_curve` is sorted by `max_distance_km` before the first matching band is selected, so the bands do not need to be given in order.
+1. **API จริงของ TMD มีรูปแบบต่างจาก spec:** รายการ event อยู่ใน `DailyEarthquakes` (ไม่ใช่ `DailySeismicEvent`) ฟิลด์เป็น `DateTimeUTC`, `DateTimeThai`, `Depth`, `OriginThai` และตัวเลขเป็น string และไม่มี `EventID` server รองรับทั้งสองรูปแบบ:
+   - `id` = `TMD-` + `EventID` ถ้ามี ถ้าไม่มีจะใช้ `TMD-` + hash ของ (เวลา, lat, lon, ขนาด) ซึ่งได้ค่าเดิมทุกครั้งที่เรียก
+   - `time` = `DateTime` หรือแปลง `DateTimeUTC` เป็น ISO8601 แบบ `Z`
+   - `place` = `Location` หรือ `OriginThai`
+2. **TMD ไม่สนพารามิเตอร์ `Date`:** API คืนข้อมูลตั้งแต่ต้นปีเสมอ (ราว 1,300 รายการขึ้นไป) server ยังส่ง `Date` ไปตาม spec แล้วกรองตามวันที่เวลาไทย (`DateTimeThai`) เอง `tmd_get_recent_earthquakes` จึงยิง request ครั้งเดียวแทน N ครั้ง (ได้ผลเหมือนกันแต่เร็วกว่ามาก) และ cache ผลไว้ 120 วินาที
+3. **capabilities ใน `initialize`** ใช้รูปแบบมาตรฐานของ MCP (`{"tools": {"listChanged": false}}`) ที่ SDK สร้างให้ แทน `tools.list/call = true` ตาม spec เพราะ client มาตรฐานคาดหวังรูปแบบนี้
+4. ผลลัพธ์ส่งกลับทั้งใน `structuredContent` (JSON object) และ `content[0].text` (JSON เดียวกันในรูป string) เพื่อให้ client ทุกตัวอ่านได้
+5. `payout_curve` จะถูกเรียงตาม `max_distance_km` ก่อนเลือก band แรกที่ตรงเงื่อนไข จึงไม่จำเป็นต้องใส่ band ตามลำดับ
