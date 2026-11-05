@@ -10,7 +10,7 @@ services:
       SEISMIC_TZ: Asia/Bangkok
       MCP_STATELESS: "true"
       MCP_JSON_RESPONSE: "true"
-      # Uncomment to enable DNS-rebinding protection (recommended outside localhost):
+      # เอา comment ออกเพื่อเปิดการป้องกัน DNS rebinding (แนะนำเมื่อใช้นอก localhost):
       # MCP_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*"
       # MCP_ALLOWED_ORIGINS: "http://localhost:*"
     restart: unless-stopped

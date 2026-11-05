@@ -1,7 +1,7 @@
-"""End-to-end check of the server over Streamable HTTP using the official MCP client.
+"""ทดสอบ server แบบ end-to-end ผ่าน Streamable HTTP ด้วย MCP client อย่างเป็นทางการ
 
     pip install mcp==2.3.0
-    python test_client.py                     # default http://localhost:8000/mcp
+    python test_client.py                     # ค่าเริ่มต้น http://localhost:8000/mcp
     python test_client.py http://host:port/mcp
 """
 

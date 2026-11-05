@@ -1,13 +1,13 @@
-"""Seismic MCP Server — Streamable HTTP (default) or stdio.
+"""Seismic MCP Server — Streamable HTTP (ค่าเริ่มต้น) หรือ stdio
 
-Run:
-    python seismic_mcp_server.py                       # Streamable HTTP on 0.0.0.0:8000/mcp
+วิธีรัน:
+    python seismic_mcp_server.py                       # Streamable HTTP ที่ 0.0.0.0:8000/mcp
     python seismic_mcp_server.py --transport stdio     # Claude Desktop (stdio)
 
-Environment variables (HTTP mode):
+Environment variables (โหมด HTTP):
     MCP_HOST (0.0.0.0)  MCP_PORT (8000)  MCP_PATH (/mcp)
     MCP_STATELESS (true)  MCP_JSON_RESPONSE (true)
-    MCP_ALLOWED_HOSTS / MCP_ALLOWED_ORIGINS  comma-separated; enables DNS-rebinding protection
+    MCP_ALLOWED_HOSTS / MCP_ALLOWED_ORIGINS  คั่นด้วย comma; ถ้ากำหนดจะเปิดการป้องกัน DNS rebinding
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from starlette.routing import Route
 
 from seismic_core import TOOLS, ToolError
 
-# Logs go to stderr only (stdout is the JSON-RPC channel in stdio mode).
+# log ออกที่ stderr เท่านั้น (ในโหมด stdio, stdout เป็นช่องทางของ JSON-RPC)
 logging.basicConfig(
     level=os.environ.get("LOG_LEVEL", "INFO").upper(),
     stream=sys.stderr,

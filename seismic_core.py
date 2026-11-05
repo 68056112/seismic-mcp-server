@@ -1,7 +1,7 @@
-"""Seismic data access + insurance analytics (transport-agnostic core).
+"""ส่วนแกนกลาง: ดึงข้อมูลแผ่นดินไหว + วิเคราะห์ประกันภัย (ไม่ผูกกับ transport ใด)
 
-Everything in this module is plain Python: no MCP imports, so it can be unit
-tested directly. `seismic_mcp_server.py` wires these tools into MCP.
+โมดูลนี้เป็น Python ล้วน ไม่ import MCP จึงทดสอบ (unit test) ได้โดยตรง
+ส่วน `seismic_mcp_server.py` เป็นตัวเชื่อม tools เหล่านี้เข้ากับ MCP
 """
 
 from __future__ import annotations
@@ -24,18 +24,18 @@ TMD_URL = "https://data.tmd.go.th/api/DailySeismicEvent/v1/"
 TMD_DEMO_PARAMS = {"uid": "api", "ukey": "api12345", "format": "json"}
 
 HTTP_TIMEOUT = float(os.environ.get("SEISMIC_HTTP_TIMEOUT", "60"))
-# "Today" for TMD tools is resolved in this zone (TMD reports Thai local time).
+# timezone ที่ใช้คำนวณ "วันนี้" ของ tools TMD (TMD รายงานเป็นเวลาไทย)
 LOCAL_TZ = ZoneInfo(os.environ.get("SEISMIC_TZ", "Asia/Bangkok"))
-# The TMD feed is one big year-to-date document, so cache it briefly.
+# TMD คืนข้อมูลก้อนใหญ่ตั้งแต่ต้นปี จึง cache ไว้ช่วงสั้น ๆ
 TMD_CACHE_TTL = float(os.environ.get("SEISMIC_TMD_CACHE_TTL", "120"))
 
 
 class ToolError(Exception):
-    """Error that maps onto a JSON-RPC error response."""
+    """error ที่จะถูกแปลงเป็น JSON-RPC error response"""
 
     INVALID_PARAMS = -32602
-    UPSTREAM = -32001  # external API (HTTP / network) failure
-    PARSE = -32002  # external API returned something we could not parse
+    UPSTREAM = -32001  # API ภายนอกล้มเหลว (HTTP / network)
+    PARSE = -32002  # API ภายนอกคืนข้อมูลที่อ่านไม่ได้
 
     def __init__(self, code: int, message: str, data: Any = None):
         super().__init__(message)
@@ -45,11 +45,11 @@ class ToolError(Exception):
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# ฟังก์ชันช่วยเหลือ
 # ---------------------------------------------------------------------------
 
 def _num(value: Any) -> float | None:
-    """Coerce provider values ("3.7", 3.7, None) to float."""
+    """แปลงค่าจากผู้ให้บริการ ("3.7", 3.7, None) เป็น float"""
     if value is None or value == "":
         return None
     try:
@@ -107,7 +107,7 @@ async def _get_json(url: str, params: dict) -> Any:
 
 
 # ---------------------------------------------------------------------------
-# Normalizers -> EarthquakeEvent
+# แปลงข้อมูลแต่ละแหล่ง -> EarthquakeEvent
 # ---------------------------------------------------------------------------
 
 def normalize_usgs_feature(feature: dict) -> dict:
@@ -135,7 +135,7 @@ def normalize_usgs_feature(feature: dict) -> dict:
 
 
 def _tmd_time(item: dict) -> str | None:
-    """ISO8601 time for a TMD item (spec shape `DateTime` or live shape `DateTimeUTC`)."""
+    """เวลา ISO8601 ของ event จาก TMD (รูปแบบตาม spec คือ `DateTime` หรือรูปแบบจริงคือ `DateTimeUTC`)"""
     if item.get("DateTime"):
         return str(item["DateTime"])
     if item.get("DateTimeUTC"):
@@ -148,7 +148,7 @@ def _tmd_time(item: dict) -> str | None:
 
 
 def _tmd_local_date(item: dict) -> str | None:
-    """Thai local calendar date (YYYY-MM-DD) of a TMD item."""
+    """วันที่ตามเวลาไทย (YYYY-MM-DD) ของ event จาก TMD"""
     if item.get("DateTimeThai"):
         return str(item["DateTimeThai"])[:10]
     t = _tmd_time(item)
@@ -163,7 +163,7 @@ def _tmd_local_date(item: dict) -> str | None:
 def _tmd_id(item: dict) -> str:
     if item.get("EventID") not in (None, ""):
         return f"TMD-{item['EventID']}"
-    # The live feed has no EventID: derive a stable one from time + epicenter.
+    # ข้อมูลจริงไม่มี EventID: สร้าง id ที่คงที่จากเวลา + ตำแหน่งศูนย์กลาง
     key = f"{item.get('DateTimeUTC')}|{item.get('Latitude')}|{item.get('Longitude')}|{item.get('Magnitude')}"
     return "TMD-" + hashlib.sha1(key.encode()).hexdigest()[:12]
 
@@ -184,7 +184,7 @@ def normalize_tmd_item(item: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Data access tools
+# Tools สำหรับดึงข้อมูล
 # ---------------------------------------------------------------------------
 
 async def usgs_search_earthquakes(args: dict) -> dict:
@@ -212,8 +212,8 @@ _tmd_cache: tuple[float, list[dict]] | None = None
 
 
 async def _fetch_tmd_items(date: str | None = None) -> list[dict]:
-    """Fetch raw TMD items. The live API ignores `Date` and returns the year to
-    date, so callers filter by date themselves; the response is cached briefly."""
+    """ดึงรายการ event ดิบจาก TMD  API จริงไม่สนพารามิเตอร์ `Date` และคืนข้อมูล
+    ตั้งแต่ต้นปีเสมอ ผู้เรียกจึงต้องกรองวันที่เอง และผลลัพธ์จะถูก cache ไว้ช่วงสั้น ๆ"""
     global _tmd_cache
     now = time.monotonic()
     if _tmd_cache and now - _tmd_cache[0] < TMD_CACHE_TTL:
@@ -228,7 +228,7 @@ async def _fetch_tmd_items(date: str | None = None) -> list[dict]:
         items = data.get("DailySeismicEvent", data.get("DailyEarthquakes", []))
     else:
         raise ToolError(ToolError.PARSE, "TMD response is not a JSON object")
-    if isinstance(items, dict):  # single event serialized as an object
+    if isinstance(items, dict):  # กรณีมี event เดียวและส่งมาเป็น object
         items = [items]
     if not isinstance(items, list):
         raise ToolError(ToolError.PARSE, "TMD response has no event list")
@@ -261,7 +261,7 @@ async def tmd_get_recent_earthquakes(args: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Insurance / parametric analytics tools
+# Tools วิเคราะห์ประกันภัย / parametric
 # ---------------------------------------------------------------------------
 
 DEFAULT_PAYOUT_CURVE = [
@@ -308,7 +308,7 @@ async def match_events_to_assets(args: dict) -> dict:
         "parameters": {"max_distance_km": max_d, "min_magnitude": min_m},
     }
     if skipped:
-        result["skipped_events"] = skipped  # events lacking magnitude/coordinates
+        result["skipped_events"] = skipped  # จำนวน event ที่ไม่มีขนาดหรือพิกัด
     return result
 
 
@@ -325,7 +325,7 @@ async def compute_parametric_payout(args: dict) -> dict:
     for band in curve:
         if not 0 <= band["payout_percent"] <= 1:
             raise ToolError(ToolError.INVALID_PARAMS, "payout_percent must be between 0.0 and 1.0")
-    curve = sorted(curve, key=lambda b: b["max_distance_km"])  # "first band" = tightest band that fits
+    curve = sorted(curve, key=lambda b: b["max_distance_km"])  # "band แรก" = band ที่แคบที่สุดที่ครอบระยะทางนั้น
 
     payouts = []
     total = 0.0
@@ -359,7 +359,7 @@ async def compute_parametric_payout(args: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Tool registry (name -> description, inputSchema, handler)
+# ทะเบียน tools (ชื่อ -> คำอธิบาย, inputSchema, handler)
 # ---------------------------------------------------------------------------
 
 _ASSET_PROPS = {
