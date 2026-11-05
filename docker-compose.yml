@@ -1,0 +1,16 @@
+services:
+  seismic-mcp:
+    build: .
+    image: seismic-mcp-server:0.1.0
+    container_name: seismic-mcp
+    ports:
+      - "8000:8000"
+    environment:
+      LOG_LEVEL: info
+      SEISMIC_TZ: Asia/Bangkok
+      MCP_STATELESS: "true"
+      MCP_JSON_RESPONSE: "true"
+      # Uncomment to enable DNS-rebinding protection (recommended outside localhost):
+      # MCP_ALLOWED_HOSTS: "localhost:*,127.0.0.1:*"
+      # MCP_ALLOWED_ORIGINS: "http://localhost:*"
+    restart: unless-stopped
